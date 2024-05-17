@@ -1,5 +1,4 @@
-use ark_ec::CurveGroup;
-use ark_ed_on_bn254::{EdwardsAffine, EdwardsConfig, EdwardsProjective, Fq, Fr};
+use ark_ed_on_bn254::{EdwardsProjective, Fq, Fr};
 use ark_ff::{MontFp, PrimeField};
 use std::ops::{Add, Mul, Sub};
 
@@ -11,6 +10,8 @@ impl BabyJubJubElement {
     pub const FR_MODULUS: Fq =
         MontFp!("2736030358979909402780800718157159386076813972158567259200215660948447373041");
 }
+
+// TODO: might add assign for all belo
 
 impl Add for BabyJubJubElement {
     type Output = Self;
@@ -41,7 +42,7 @@ impl Mul<Fq> for BabyJubJubElement {
             let scalar_fr = Fr::from(scalar.into_bigint());
             let proj_self: EdwardsProjective = self.0.into();
             let proj_result = proj_self.mul(&scalar_fr);
-            BabyJubJubElement(proj_result.into())
+            BabyJubJubElement(proj_result)
         } else {
             panic!("Scalar value exceeds the modulus of Fr and cannot be converted safely.");
         }

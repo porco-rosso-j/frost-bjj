@@ -9,8 +9,8 @@ use std::collections::HashMap;
 // This is imported separately to make `gencode` work.
 // (if it were below, the position of the import would vary between ciphersuites
 //  after `cargo fmt`)
-use crate::{frost, Ciphersuite, CryptoRng, Identifier, RngCore, Scalar};
-use crate::{Error, Secp256K1Sha256};
+use crate::{frost, Ciphersuite, CryptoRng, Fq, Identifier, RngCore};
+use crate::{BabyJubJubSha256, Error};
 
 use super::{SecretShare, VerifiableSecretSharingCommitment};
 
@@ -26,7 +26,7 @@ pub fn repair_share_step_1<C: Ciphersuite, R: RngCore + CryptoRng>(
     share_i: &SecretShare,
     rng: &mut R,
     participant: Identifier,
-) -> Result<HashMap<Identifier, Scalar>, Error> {
+) -> Result<HashMap<Identifier, Fq>, Error> {
     frost::keys::repairable::repair_share_step_1(helpers, share_i, rng, participant)
 }
 
@@ -36,9 +36,9 @@ pub fn repair_share_step_1<C: Ciphersuite, R: RngCore + CryptoRng>(
 /// to help `participant` recover their share.
 /// `sigma` is the sum of all received `delta` and the `delta_i` generated for `helper_i`.
 ///
-/// Returns a scalar
-pub fn repair_share_step_2(deltas_j: &[Scalar]) -> Scalar {
-    frost::keys::repairable::repair_share_step_2::<Secp256K1Sha256>(deltas_j)
+/// Returns a Fq
+pub fn repair_share_step_2(deltas_j: &[Fq]) -> Fq {
+    frost::keys::repairable::repair_share_step_2::<BabyJubJubSha256>(deltas_j)
 }
 
 /// Step 3 of RTS
@@ -47,7 +47,7 @@ pub fn repair_share_step_2(deltas_j: &[Scalar]) -> Scalar {
 /// is made up of the `identifier`and `commitment` of the `participant` as well as the
 /// `value` which is the `SigningShare`.
 pub fn repair_share_step_3(
-    sigmas: &[Scalar],
+    sigmas: &[Fq],
     identifier: Identifier,
     commitment: &VerifiableSecretSharingCommitment,
 ) -> SecretShare {
@@ -61,7 +61,7 @@ mod tests {
     use rand::thread_rng;
     use serde_json::Value;
 
-    use crate::Secp256K1Sha256;
+    use crate::BabyJubJubSha256;
 
     // lazy_static! {
     //     pub static ref REPAIR_SHARE: Value =
@@ -73,7 +73,7 @@ mod tests {
     fn check_repair_share_step_1() {
         let rng = thread_rng();
 
-        frost_core::tests::repairable::check_repair_share_step_1::<Secp256K1Sha256, _>(rng);
+        frost_core::tests::repairable::check_repair_share_step_1::<BabyJubJubSha256, _>(rng);
     }
 
     #[test]
@@ -94,7 +94,7 @@ mod tests {
     fn check_repair_share_step_1_fails_with_invalid_min_signers() {
         let rng = thread_rng();
         frost_core::tests::repairable::check_repair_share_step_1_fails_with_invalid_min_signers::<
-            Secp256K1Sha256,
+            BabyJubJubSha256,
             _,
         >(rng);
     }
