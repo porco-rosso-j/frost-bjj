@@ -5,8 +5,8 @@
 // #![doc = include_str!("../README.md")]
 #![doc = document_features::document_features!()]
 
-use ark_ec::twisted_edwards::TECurveConfig;
-use ark_ed_on_bn254::{EdwardsAffine, EdwardsConfig, Fr};
+use ark_ec::{twisted_edwards::TECurveConfig, CurveConfig};
+use ark_ed_on_bn254::{EdwardsAffine, EdwardsConfig, EdwardsProjective, Fq, Fr};
 use ark_ff::{BigInteger, Field as ArkField, One, PrimeField, UniformRand, Zero};
 
 use rand_core::{CryptoRng, RngCore};
@@ -35,16 +35,19 @@ use bjj_element::BabyJubJubElement;
 pub struct BabyJubJubScalarField;
 
 impl Field for BabyJubJubScalarField {
-    type Scalar = Fr;
+    // type Scalar = Fr;
+    type Scalar = Fq;
 
     type Serialization = [u8; 32];
 
     fn zero() -> Self::Scalar {
-        Fr::zero()
+        // Fr::zero()
+        Fq::zero()
     }
 
     fn one() -> Self::Scalar {
-        Fr::one()
+        // Fr::one()
+        Fq::one()
     }
 
     fn invert(scalar: &Self::Scalar) -> Result<Self::Scalar, FieldError> {
@@ -57,7 +60,8 @@ impl Field for BabyJubJubScalarField {
     }
 
     fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self::Scalar {
-        Fr::rand(rng)
+        // Fr::rand(rng)
+        Fq::rand(rng)
     }
 
     fn serialize(scalar: &Self::Scalar) -> Self::Serialization {
@@ -69,7 +73,8 @@ impl Field for BabyJubJubScalarField {
     }
 
     fn deserialize(buf: &Self::Serialization) -> Result<Self::Scalar, FieldError> {
-        let scalar = Fr::from_le_bytes_mod_order(buf);
+        // let scalar = Fr::from_le_bytes_mod_order(buf);
+        let scalar = Fq::from_le_bytes_mod_order(buf);
         if scalar.is_zero() {
             Err(FieldError::InvalidZeroScalar)
         } else {
@@ -102,16 +107,16 @@ impl Group for BabyJubJubGroup {
     type Serialization = [u8; 33];
 
     fn cofactor() -> <Self::Field as Field>::Scalar {
-        Fr::from(8u64)
+        Fq::from(8u64)
     }
 
     fn identity() -> Self::Element {
         // EdwardsProjective::zero()
-        BabyJubJubElement(EdwardsAffine::zero().into())
+        BabyJubJubElement(EdwardsProjective::zero().into())
     }
 
     fn generator() -> Self::Element {
-        BabyJubJubElement(EdwardsConfig::GENERATOR)
+        BabyJubJubElement(EdwardsProjective::from(EdwardsConfig::GENERATOR))
     }
 
     fn serialize(element: &Self::Element) -> Self::Serialization {
