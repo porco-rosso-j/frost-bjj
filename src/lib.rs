@@ -5,25 +5,14 @@
 // #![doc = include_str!("../README.md")]
 #![doc = document_features::document_features!()]
 
-use std::collections::HashMap;
-
-// use k256::{
-//     elliptic_curve::{
-//         group::prime::PrimeCurveAffine,
-//         hash2curve::{hash_to_field, ExpandMsgXmd},
-//         sec1::{FromEncodedPoint, ToEncodedPoint},
-//         Field as FFField, PrimeField,
-//     },
-//     AffinePoint, ProjectivePoint, Scalar,
-// };
-
-use ark_ed_on_bn254::{EdwardsAffine, EdwardsProjective, Fq};
+use ark_ec::twisted_edwards::TECurveConfig;
+use ark_ed_on_bn254::{EdwardsAffine, EdwardsConfig, Fr};
 use ark_ff::{BigInteger, Field as ArkField, One, PrimeField, UniformRand, Zero};
 
 use rand_core::{CryptoRng, RngCore};
 // use sha2::{Digest, Sha256};
 
-use frost_core::frost;
+use frost_core::{frost, Element};
 
 #[cfg(feature = "serde")]
 use frost_core::serde;
@@ -35,7 +24,8 @@ use frost_core::serde;
 pub use frost_core::{Ciphersuite, Field, FieldError, Group, GroupError};
 pub use rand_core;
 
-// use rand::{CryptoRng, Rng, RngCore};
+mod bjj_element;
+use bjj_element::BabyJubJubElement;
 
 /// An error.
 // pub type Error = frost_core::Error<Secp256K1Sha256>;
@@ -45,16 +35,16 @@ pub use rand_core;
 pub struct BabyJubJubScalarField;
 
 impl Field for BabyJubJubScalarField {
-    type Scalar = Fq;
+    type Scalar = Fr;
 
     type Serialization = [u8; 32];
 
     fn zero() -> Self::Scalar {
-        Fq::zero()
+        Fr::zero()
     }
 
     fn one() -> Self::Scalar {
-        Fq::one()
+        Fr::one()
     }
 
     fn invert(scalar: &Self::Scalar) -> Result<Self::Scalar, FieldError> {
@@ -67,7 +57,7 @@ impl Field for BabyJubJubScalarField {
     }
 
     fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self::Scalar {
-        Fq::rand(rng)
+        Fr::rand(rng)
     }
 
     fn serialize(scalar: &Self::Scalar) -> Self::Serialization {
@@ -79,7 +69,7 @@ impl Field for BabyJubJubScalarField {
     }
 
     fn deserialize(buf: &Self::Serialization) -> Result<Self::Scalar, FieldError> {
-        let scalar = Fq::from_le_bytes_mod_order(buf);
+        let scalar = Fr::from_le_bytes_mod_order(buf);
         if scalar.is_zero() {
             Err(FieldError::InvalidZeroScalar)
         } else {
@@ -96,69 +86,72 @@ impl Field for BabyJubJubScalarField {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct BabyJubJubGroup;
 
-// impl Group for BabyJubJubGroup {
-//     type Field = BabyJubJubScalarField;
+impl Group for BabyJubJubGroup {
+    type Field = BabyJubJubScalarField;
 
-//     type Element = EdwardsProjective;
+    type Element = BabyJubJubElement;
 
-//     /// [SEC 1][1] serialization of a compressed point in secp256k1 takes 33 bytes
-//     /// (1-byte prefix and 32 bytes for the coordinate).
-//     ///
-//     /// Note that, in the SEC 1 spec, the identity is encoded as a single null byte;
-//     /// but here we pad with zeroes. This is acceptable as the identity _should_ never
-//     /// be serialized in FROST, else we error.
-//     ///
-//     /// [1]: https://secg.org/sec1-v2.pdf
-//     type Serialization = [u8; 33];
+    /// [SEC 1][1] serialization of a compressed point in secp256k1 takes 33 bytes
+    /// (1-byte prefix and 32 bytes for the coordinate).
+    ///
+    /// Note that, in the SEC 1 spec, the identity is encoded as a single null byte;
+    /// but here we pad with zeroes. This is acceptable as the identity _should_ never
+    /// be serialized in FROST, else we error.
+    ///
+    /// [1]: https://secg.org/sec1-v2.pdf
+    type Serialization = [u8; 33];
 
-//     fn cofactor() -> <Self::Field as Field>::Scalar {
-//         EdwardsProjective::ONE
-//     }
+    fn cofactor() -> <Self::Field as Field>::Scalar {
+        Fr::from(8u64)
+    }
 
-//     fn identity() -> Self::Element {
-//         EdwardsProjective::IDENTITY
-//     }
+    fn identity() -> Self::Element {
+        // EdwardsProjective::zero()
+        BabyJubJubElement(EdwardsAffine::zero().into())
+    }
 
-//     fn generator() -> Self::Element {
-//         EdwardsAffine::new_unchecked(GENERATOR_X, GENERATOR_Y);
-//     }
+    fn generator() -> Self::Element {
+        BabyJubJubElement(EdwardsConfig::GENERATOR)
+    }
 
-//     fn serialize(element: &Self::Element) -> Self::Serialization {
-//         let mut fixed_serialized = [0; 33];
-//         let serialized_point = element.to_affine().to_encoded_point(true);
-//         let serialized = serialized_point.as_bytes();
-//         // Sanity check; either it takes all bytes or a single byte (identity).
-//         assert!(serialized.len() == fixed_serialized.len() || serialized.len() == 1);
-//         // Copy to the left of the buffer (i.e. pad the identity with zeroes).
-//         // Note that identity elements shouldn't be serialized in FROST, but we
-//         // do this padding so that this function doesn't have to return an error.
-//         // If this encodes the identity, it will fail when deserializing.
-//         {
-//             let (left, _right) = fixed_serialized.split_at_mut(serialized.len());
-//             left.copy_from_slice(serialized);
-//         }
-//         fixed_serialized
-//     }
+    fn serialize(element: &Self::Element) -> Self::Serialization {
+        let mut fixed_serialized = [0; 33];
+        // let serialized_point = element.0.to_encoded_point(true);
+        // let serialized = serialized_point.as_bytes();
+        // // Sanity check; either it takes all bytes or a single byte (identity).
+        // assert!(serialized.len() == fixed_serialized.len() || serialized.len() == 1);
+        // // Copy to the left of the buffer (i.e. pad the identity with zeroes).
+        // // Note that identity elements shouldn't be serialized in FROST, but we
+        // // do this padding so that this function doesn't have to return an error.
+        // // If this encodes the identity, it will fail when deserializing.
+        // {
+        //     let (left, _right) = fixed_serialized.split_at_mut(serialized.len());
+        //     left.copy_from_slice(serialized);
+        // }
+        fixed_serialized
+    }
 
-//     fn deserialize(buf: &Self::Serialization) -> Result<Self::Element, GroupError> {
-//         let encoded_point =
-//             k256::EncodedPoint::from_bytes(buf).map_err(|_| GroupError::MalformedElement)?;
+    fn deserialize(buf: &Self::Serialization) -> Result<Self::Element, GroupError> {
+        // let encoded_point =
+        //     k256::EncodedPoint::from_bytes(buf).map_err(|_| GroupError::MalformedElement)?;
 
-//         match Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&encoded_point)) {
-//             Some(point) => {
-//                 if point.is_identity().into() {
-//                     // This is actually impossible since the identity is encoded a a single byte
-//                     // which will never happen since we receive a 33-byte buffer.
-//                     // We leave the check for consistency.
-//                     Err(GroupError::InvalidIdentityElement)
-//                 } else {
-//                     Ok(ProjectivePoint::from(point))
-//                 }
-//             }
-//             None => Err(GroupError::MalformedElement),
-//         }
-//     }
-// }
+        // match Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&encoded_point)) {
+        //     Some(point) => {
+        //         if point.is_identity().into() {
+        //             // This is actually impossible since the identity is encoded a a single byte
+        //             // which will never happen since we receive a 33-byte buffer.
+        //             // We leave the check for consistency.
+        //             Err(GroupError::InvalidIdentityElement)
+        //         } else {
+        //             Ok(ProjectivePoint::from(point))
+        //         }
+        //     }
+        //     None => Err(GroupError::MalformedElement),
+        // }
+
+        Err(GroupError::InvalidIdentityElement)
+    }
+}
 
 // fn hash_to_array(inputs: &[&[u8]]) -> [u8; 32] {
 //     // let mut h = Sha256::new();
