@@ -18,7 +18,6 @@ impl Add for BabyJubJubElement {
 
     fn add(self, other: Self) -> Self::Output {
         let proj_sum = self.0 + other.0;
-        // BabyJubJubElement(proj_sum.into_affine())
         BabyJubJubElement(proj_sum)
     }
 }
@@ -28,8 +27,6 @@ impl Sub for BabyJubJubElement {
 
     fn sub(self, other: Self) -> Self::Output {
         let proj_sum = self.0 - other.0;
-
-        // BabyJubJubElement(proj_sum.into_affine())
         BabyJubJubElement(proj_sum)
     }
 }

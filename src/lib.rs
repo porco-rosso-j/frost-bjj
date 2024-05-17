@@ -24,8 +24,8 @@ use frost_core::frost;
 #[cfg(feature = "serde")]
 use frost_core::serde;
 
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 // Re-exports in our public API
 pub use frost_core::{Ciphersuite, Field, FieldError, Group, GroupError};
@@ -37,7 +37,7 @@ use bjj_element::BabyJubJubElement;
 /// An error.
 pub type Error = frost_core::Error<BabyJubJubSha256>;
 
-/// An implementation of the FROST(secp256k1, SHA-256) ciphersuite scalar field.
+/// An implementation of the FROST(babyjubjub, SHA-256) ciphersuite scalar field.
 #[derive(Clone, Copy)]
 pub struct BabyJubJubScalarField;
 
@@ -93,7 +93,7 @@ impl Field for BabyJubJubScalarField {
     }
 }
 
-/// An implementation of the FROST(secp256k1, SHA-256) ciphersuite group.
+/// An implementation of the FROST(babyjubjub, SHA-256) ciphersuite group.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct BabyJubJubGroup;
 
@@ -164,26 +164,19 @@ fn hash_to_scalar(domain: &[u8], msg: &[u8]) -> Fq {
     result[0]
 }
 
-// #[test]
-// fn main() {
-//     let domain = b"example_domain";
-//     let scalar = hash_to_scalar(domain);
-//     println!("Hashed scalar: {:?}", scalar.0);
-// }
-
 /// Context string from the ciphersuite in the [spec].
 ///
 /// [spec]: https://www.ietf.org/archive/id/draft-irtf-cfrg-frost-14.html#section-6.5-1
 const CONTEXT_STRING: &str = "FROST-babyjubjub-SHA256-v1";
 
-/// An implementation of the FROST(secp256k1, SHA-256) ciphersuite.
+/// An implementation of the FROST(babyjubjub, SHA-256) ciphersuite.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(crate = "self::serde"))]
 pub struct BabyJubJubSha256;
 
 impl Ciphersuite for BabyJubJubSha256 {
-    const ID: &'static str = "FROST(secp256k1, SHA-256)";
+    const ID: &'static str = "FROST(babyjubjub, SHA-256)";
 
     type Group = BabyJubJubGroup;
 
@@ -191,42 +184,42 @@ impl Ciphersuite for BabyJubJubSha256 {
 
     type SignatureSerialization = [u8; 65];
 
-    /// H1 for FROST(secp256k1, SHA-256)
+    /// H1 for FROST(babyjubjub, SHA-256)
     ///
     /// [spec]: https://www.ietf.org/archive/id/draft-irtf-cfrg-frost-14.html#section-6.5-2.2.2.1
     fn H1(m: &[u8]) -> <<Self::Group as Group>::Field as Field>::Scalar {
         hash_to_scalar((CONTEXT_STRING.to_owned() + "rho").as_bytes(), m)
     }
 
-    /// H2 for FROST(secp256k1, SHA-256)
+    /// H2 for FROST(babyjubjub, SHA-256)
     ///
     /// [spec]: https://www.ietf.org/archive/id/draft-irtf-cfrg-frost-14.html#section-6.5-2.2.2.2
     fn H2(m: &[u8]) -> <<Self::Group as Group>::Field as Field>::Scalar {
         hash_to_scalar((CONTEXT_STRING.to_owned() + "chal").as_bytes(), m)
     }
 
-    /// H3 for FROST(secp256k1, SHA-256)
+    /// H3 for FROST(babyjubjub, SHA-256)
     ///
     /// [spec]: https://www.ietf.org/archive/id/draft-irtf-cfrg-frost-14.html#section-6.5-2.2.2.3
     fn H3(m: &[u8]) -> <<Self::Group as Group>::Field as Field>::Scalar {
         hash_to_scalar((CONTEXT_STRING.to_owned() + "nonce").as_bytes(), m)
     }
 
-    /// H4 for FROST(secp256k1, SHA-256)
+    /// H4 for FROST(babyjubjub, SHA-256)
     ///
     /// [spec]: https://www.ietf.org/archive/id/draft-irtf-cfrg-frost-14.html#section-6.5-2.2.2.4
     fn H4(m: &[u8]) -> Self::HashOutput {
         hash_to_array(&[CONTEXT_STRING.as_bytes(), b"msg", m])
     }
 
-    /// H5 for FROST(secp256k1, SHA-256)
+    /// H5 for FROST(babyjubjub, SHA-256)
     ///
     /// [spec]: https://www.ietf.org/archive/id/draft-irtf-cfrg-frost-14.html#section-6.5-2.2.2.5
     fn H5(m: &[u8]) -> Self::HashOutput {
         hash_to_array(&[CONTEXT_STRING.as_bytes(), b"com", m])
     }
 
-    /// HDKG for FROST(secp256k1, SHA-256)
+    /// HDKG for FROST(babyjubjub, SHA-256)
     fn HDKG(m: &[u8]) -> Option<<<Self::Group as Group>::Field as Field>::Scalar> {
         Some(hash_to_scalar(
             (CONTEXT_STRING.to_owned() + "dkg").as_bytes(),
@@ -234,7 +227,7 @@ impl Ciphersuite for BabyJubJubSha256 {
         ))
     }
 
-    /// HID for FROST(secp256k1, SHA-256)
+    /// HID for FROST(babyjubjub, SHA-256)
     fn HID(m: &[u8]) -> Option<<<Self::Group as Group>::Field as Field>::Scalar> {
         Some(hash_to_scalar(
             (CONTEXT_STRING.to_owned() + "id").as_bytes(),
@@ -245,10 +238,10 @@ impl Ciphersuite for BabyJubJubSha256 {
 
 type S = BabyJubJubSha256;
 
-/// A FROST(secp256k1, SHA-256) participant identifier.
+/// A FROST(babyjubjub, SHA-256) participant identifier.
 pub type Identifier = frost::Identifier<S>;
 
-/// FROST(secp256k1, SHA-256) keys, key generation, key shares.
+/// FROST(babyjubjub, SHA-256) keys, key generation, key shares.
 pub mod keys {
 
     use super::*;
@@ -304,7 +297,7 @@ pub mod keys {
     ///
     /// # Security
     ///
-    /// To derive a FROST(secp256k1, SHA-256) keypair, the receiver of the [`SecretShare`] *must* call
+    /// To derive a FROST(babyjubjub, SHA-256) keypair, the receiver of the [`SecretShare`] *must* call
     /// .into(), which under the hood also performs validation.
     pub type SecretShare = frost::keys::SecretShare<S>;
 
@@ -314,7 +307,7 @@ pub mod keys {
     /// A public group element that represents a single signer's public verification share.
     pub type VerifyingShare = frost::keys::VerifyingShare<S>;
 
-    /// A FROST(secp256k1, SHA-256) keypair, which can be generated either by a trusted dealer or using
+    /// A FROST(babyjubjub, SHA-256) keypair, which can be generated either by a trusted dealer or using
     /// a DKG.
     ///
     /// When using a central dealer, [`SecretShare`]s are distributed to
@@ -346,13 +339,13 @@ pub mod keys {
     pub mod repairable;
 }
 
-/// FROST(secp256k1, SHA-256) Round 1 functionality and types.
+/// FROST(babyjubjub, SHA-256) Round 1 functionality and types.
 pub mod round1 {
     use crate::keys::SigningShare;
 
     use super::*;
 
-    /// Comprised of FROST(secp256k1, SHA-256) hiding and binding nonces.
+    /// Comprised of FROST(babyjubjub, SHA-256) hiding and binding nonces.
     ///
     /// Note that [`SigningNonces`] must be used *only once* for a signing
     /// operation; re-using nonces will result in leakage of a signer's long-lived
@@ -384,11 +377,11 @@ pub mod round1 {
 /// each signing party.
 pub type SigningPackage = frost::SigningPackage<S>;
 
-/// FROST(secp256k1, SHA-256) Round 2 functionality and types, for signature share generation.
+/// FROST(babyjubjub, SHA-256) Round 2 functionality and types, for signature share generation.
 pub mod round2 {
     use super::*;
 
-    /// A FROST(secp256k1, SHA-256) participant's signature share, which the Coordinator will aggregate with all other signer's
+    /// A FROST(babyjubjub, SHA-256) participant's signature share, which the Coordinator will aggregate with all other signer's
     /// shares into the joint signature.
     pub type SignatureShare = frost::round2::SignatureShare<S>;
 
@@ -409,10 +402,10 @@ pub mod round2 {
     }
 }
 
-/// A Schnorr signature on FROST(secp256k1, SHA-256).
+/// A Schnorr signature on FROST(babyjubjub, SHA-256).
 pub type Signature = frost_core::Signature<S>;
 
-/// Verifies each FROST(secp256k1, SHA-256) participant's signature share, and if all are valid,
+/// Verifies each FROST(babyjubjub, SHA-256) participant's signature share, and if all are valid,
 /// aggregates the shares into a signature to publish.
 ///
 /// Resulting signature is compatible with verification of a plain Schnorr
@@ -435,8 +428,8 @@ pub fn aggregate(
     frost::aggregate(signing_package, signature_shares, pubkeys)
 }
 
-/// A signing key for a Schnorr signature on FROST(secp256k1, SHA-256).
+/// A signing key for a Schnorr signature on FROST(babyjubjub, SHA-256).
 pub type SigningKey = frost_core::SigningKey<S>;
 
-/// A valid verifying key for Schnorr signatures on FROST(secp256k1, SHA-256).
+/// A valid verifying key for Schnorr signatures on FROST(babyjubjub, SHA-256).
 pub type VerifyingKey = frost_core::VerifyingKey<S>;
