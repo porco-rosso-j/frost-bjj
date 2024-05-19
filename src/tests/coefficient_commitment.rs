@@ -28,6 +28,8 @@ fn check_create_coefficient_commitment() {
         _,
     >(rng);
 }
+
+// error: Tried to debugless_unwrap Err value
 #[test]
 fn check_create_coefficient_commitment_error() {
     frost_core::tests::coefficient_commitment::check_create_coefficient_commitment_error::<

@@ -23,6 +23,7 @@ fn check_deserialize_vss_commitment() {
     frost_core::tests::vss_commitment::check_deserialize_vss_commitment::<BabyJubJubSha256, _>(rng);
 }
 
+// Tried to debugless_unwrap Err value
 #[test]
 fn check_deserialize_vss_commitment_error() {
     let rng = thread_rng();

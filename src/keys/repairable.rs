@@ -9,7 +9,7 @@ use std::collections::HashMap;
 // This is imported separately to make `gencode` work.
 // (if it were below, the position of the import would vary between ciphersuites
 //  after `cargo fmt`)
-use crate::{frost, Ciphersuite, CryptoRng, Fq, Identifier, RngCore};
+use crate::{frost, Ciphersuite, CryptoRng, Fr, Identifier, RngCore};
 use crate::{BabyJubJubSha256, Error};
 
 use super::{SecretShare, VerifiableSecretSharingCommitment};
@@ -26,7 +26,7 @@ pub fn repair_share_step_1<C: Ciphersuite, R: RngCore + CryptoRng>(
     share_i: &SecretShare,
     rng: &mut R,
     participant: Identifier,
-) -> Result<HashMap<Identifier, Fq>, Error> {
+) -> Result<HashMap<Identifier, Fr>, Error> {
     frost::keys::repairable::repair_share_step_1(helpers, share_i, rng, participant)
 }
 
@@ -36,8 +36,8 @@ pub fn repair_share_step_1<C: Ciphersuite, R: RngCore + CryptoRng>(
 /// to help `participant` recover their share.
 /// `sigma` is the sum of all received `delta` and the `delta_i` generated for `helper_i`.
 ///
-/// Returns a Fq
-pub fn repair_share_step_2(deltas_j: &[Fq]) -> Fq {
+/// Returns a Fr
+pub fn repair_share_step_2(deltas_j: &[Fr]) -> Fr {
     frost::keys::repairable::repair_share_step_2::<BabyJubJubSha256>(deltas_j)
 }
 
@@ -47,7 +47,7 @@ pub fn repair_share_step_2(deltas_j: &[Fq]) -> Fq {
 /// is made up of the `identifier`and `commitment` of the `participant` as well as the
 /// `value` which is the `SigningShare`.
 pub fn repair_share_step_3(
-    sigmas: &[Fq],
+    sigmas: &[Fr],
     identifier: Identifier,
     commitment: &VerifiableSecretSharingCommitment,
 ) -> SecretShare {

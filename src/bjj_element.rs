@@ -1,4 +1,4 @@
-use ark_ed_on_bn254::{EdwardsProjective, Fq, Fr};
+use ark_ed_on_bn254::{EdwardsAffine, EdwardsProjective, Fq, Fr};
 use ark_ff::{MontFp, PrimeField};
 use std::ops::{Add, Mul, Sub};
 
@@ -31,17 +31,26 @@ impl Sub for BabyJubJubElement {
     }
 }
 
-impl Mul<Fq> for BabyJubJubElement {
+// impl Mul<Fq> for BabyJubJubElement {
+//     type Output = Self;
+
+//     fn mul(self, scalar: Fq) -> Self::Output {
+//         if scalar < Self::FR_MODULUS {
+//             let scalar_fr = Fr::from(scalar.into_bigint());
+//             let proj_self: EdwardsProjective = self.0.into();
+//             let proj_result = proj_self.mul(&scalar_fr);
+//             BabyJubJubElement(proj_result)
+//         } else {
+//             panic!("Scalar value exceeds the modulus of Fr and cannot be converted safely.");
+//         }
+//     }
+// }
+impl Mul<Fr> for BabyJubJubElement {
     type Output = Self;
 
-    fn mul(self, scalar: Fq) -> Self::Output {
-        if scalar < Self::FR_MODULUS {
-            let scalar_fr = Fr::from(scalar.into_bigint());
-            let proj_self: EdwardsProjective = self.0.into();
-            let proj_result = proj_self.mul(&scalar_fr);
-            BabyJubJubElement(proj_result)
-        } else {
-            panic!("Scalar value exceeds the modulus of Fr and cannot be converted safely.");
-        }
+    fn mul(self, scalar: Fr) -> Self::Output {
+        let proj_self: EdwardsProjective = self.0.into();
+        let proj_result = proj_self.mul(&scalar);
+        BabyJubJubElement(proj_result)
     }
 }

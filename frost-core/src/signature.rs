@@ -75,7 +75,11 @@ where
         let mut bytes = vec![];
 
         bytes.extend(<C::Group>::serialize(&self.R).as_ref());
+        // println!("bytes1: {:?}", bytes);
+
         bytes.extend(<<C::Group as Group>::Field>::serialize(&self.z).as_ref());
+
+        // println!("bytes2: {:?}", bytes);
 
         bytes.try_into().debugless_unwrap()
     }

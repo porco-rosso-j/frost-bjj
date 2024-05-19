@@ -1,6 +1,8 @@
 use frost_bjj::BabyJubJubSha256;
 use rand::thread_rng;
 
+// the trait `frost_rerandomized::frost_core::Ciphersuite` is not implemented for `BabyJubJubSha256`
+
 #[test]
 fn check_randomized_sign_with_dealer() {
     let rng = thread_rng();

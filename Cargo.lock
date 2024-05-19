@@ -505,7 +505,7 @@ dependencies = [
  "ark-std",
  "criterion",
  "document-features",
- "frost-core",
+ "frost-core 0.7.0",
  "frost-rerandomized",
  "hex",
  "insta",
@@ -516,6 +516,29 @@ dependencies = [
  "rand_core",
  "serde_json",
  "sha2",
+]
+
+[[package]]
+name = "frost-core"
+version = "0.7.0"
+dependencies = [
+ "byteorder",
+ "const-crc32",
+ "criterion",
+ "debugless-unwrap",
+ "derive-getters",
+ "document-features",
+ "hex",
+ "itertools 0.11.0",
+ "postcard",
+ "proptest",
+ "rand_core",
+ "serde",
+ "serde_json",
+ "serdect",
+ "thiserror",
+ "visibility",
+ "zeroize",
 ]
 
 [[package]]
@@ -551,7 +574,7 @@ checksum = "2b45409d93cf5000f52ae64847a8a270a4562f1a035e74c3fae0e2462adb97ae"
 dependencies = [
  "derive-getters",
  "document-features",
- "frost-core",
+ "frost-core 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_core",
 ]
 

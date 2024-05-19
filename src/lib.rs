@@ -7,8 +7,8 @@
 
 use std::collections::HashMap;
 
-use ark_ec::twisted_edwards::TECurveConfig;
-use ark_ed_on_bn254::{EdwardsConfig, EdwardsProjective, Fq};
+use ark_ec::{twisted_edwards::TECurveConfig, CurveGroup};
+use ark_ed_on_bn254::{EdwardsConfig, EdwardsProjective, Fr};
 use ark_ff::{
     field_hashers::DefaultFieldHasher, fields::field_hashers::HashToField, BigInteger,
     Field as ArkField, One, PrimeField, UniformRand, Zero,
@@ -42,18 +42,16 @@ pub type Error = frost_core::Error<BabyJubJubSha256>;
 pub struct BabyJubJubScalarField;
 
 impl Field for BabyJubJubScalarField {
-    type Scalar = Fq;
+    type Scalar = Fr;
 
     type Serialization = [u8; 32];
 
     fn zero() -> Self::Scalar {
-        // Fr::zero()
-        Fq::zero()
+        Fr::zero()
     }
 
     fn one() -> Self::Scalar {
-        // Fr::one()
-        Fq::one()
+        Fr::one()
     }
 
     fn invert(scalar: &Self::Scalar) -> Result<Self::Scalar, FieldError> {
@@ -67,7 +65,8 @@ impl Field for BabyJubJubScalarField {
 
     fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self::Scalar {
         // TODO: maybe reduce to Fr
-        Fq::rand(rng)
+        // Fq::from(Fr::rand(rng).into_bigint())
+        Fr::rand(rng)
     }
 
     fn serialize(scalar: &Self::Scalar) -> Self::Serialization {
@@ -80,7 +79,7 @@ impl Field for BabyJubJubScalarField {
 
     fn deserialize(buf: &Self::Serialization) -> Result<Self::Scalar, FieldError> {
         // let scalar = Fr::from_le_bytes_mod_order(buf);
-        let scalar = Fq::from_le_bytes_mod_order(buf);
+        let scalar = Fr::from_le_bytes_mod_order(buf);
         if scalar.is_zero() {
             Err(FieldError::InvalidZeroScalar)
         } else {
@@ -105,11 +104,11 @@ impl Group for BabyJubJubGroup {
     type Serialization = [u8; 32];
 
     fn cofactor() -> <Self::Field as Field>::Scalar {
-        Fq::from(8u64)
+        Fr::from(8u64)
     }
 
     fn identity() -> Self::Element {
-        BabyJubJubElement(EdwardsProjective::zero().into())
+        BabyJubJubElement(EdwardsProjective::zero())
     }
 
     fn generator() -> Self::Element {
@@ -117,11 +116,13 @@ impl Group for BabyJubJubGroup {
     }
 
     fn serialize(element: &Self::Element) -> Self::Serialization {
-        let mut vec: Vec<u8> = vec![0; 32];
+        // let mut vec: Vec<u8> = vec![0; 32];
+        let mut vec = Vec::new();
         let mut array = [0u8; 32];
 
-        element
-            .0
+        let affine = element.0.into_affine();
+
+        affine
             .serialize_with_mode(&mut vec, Compress::Yes)
             .expect("Serialization should succeed");
 
@@ -132,6 +133,8 @@ impl Group for BabyJubJubGroup {
             }
             _ => panic!("Unexpected serialized length: {}", vec.len()),
         }
+
+        // println!("array: {:?}", array);
 
         array
     }
@@ -158,9 +161,9 @@ fn hash_to_array(inputs: &[&[u8]]) -> [u8; 32] {
     output
 }
 
-fn hash_to_scalar(domain: &[u8], msg: &[u8]) -> Fq {
-    let hasher: DefaultFieldHasher<Sha256> = HashToField::<Fq>::new(domain); // Note the braces around 32 if it's a const parameter
-    let result: Vec<Fq> = hasher.hash_to_field(msg, 32);
+fn hash_to_scalar(domain: &[u8], msg: &[u8]) -> Fr {
+    let hasher: DefaultFieldHasher<Sha256> = HashToField::<Fr>::new(domain); // Note the braces around 32 if it's a const parameter
+    let result: Vec<Fr> = hasher.hash_to_field(msg, 32);
     result[0]
 }
 
@@ -182,7 +185,7 @@ impl Ciphersuite for BabyJubJubSha256 {
 
     type HashOutput = [u8; 32];
 
-    type SignatureSerialization = [u8; 65];
+    type SignatureSerialization = [u8; 64];
 
     /// H1 for FROST(babyjubjub, SHA-256)
     ///
