@@ -20,6 +20,7 @@ fn check_serialization_of_coefficient_commitment() {
     >(rng);
 }
 
+// error: called `Result::unwrap()` on an `Err` value: GroupError(MalformedElement)
 #[test]
 fn check_create_coefficient_commitment() {
     let rng = thread_rng();
@@ -29,7 +30,6 @@ fn check_create_coefficient_commitment() {
     >(rng);
 }
 
-// error: Tried to debugless_unwrap Err value
 #[test]
 fn check_create_coefficient_commitment_error() {
     frost_core::tests::coefficient_commitment::check_create_coefficient_commitment_error::<

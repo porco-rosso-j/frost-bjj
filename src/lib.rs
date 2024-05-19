@@ -7,8 +7,8 @@
 
 use std::collections::HashMap;
 
-use ark_ec::{twisted_edwards::TECurveConfig, CurveGroup};
-use ark_ed_on_bn254::{EdwardsConfig, EdwardsProjective, Fr};
+use ark_ec::{twisted_edwards::TECurveConfig, CurveConfig, CurveGroup};
+use ark_ed_on_bn254::{Fq, Fr};
 use ark_ff::{
     field_hashers::DefaultFieldHasher, fields::field_hashers::HashToField, BigInteger,
     Field as ArkField, One, PrimeField, UniformRand, Zero,
@@ -27,12 +27,11 @@ use frost_core::serde;
 #[cfg(test)]
 mod tests;
 
-// Re-exports in our public API
 pub use frost_core::{Ciphersuite, Field, FieldError, Group, GroupError};
 pub use rand_core;
 
-mod bjj_element;
-use bjj_element::BabyJubJubElement;
+mod babyjubjub;
+use babyjubjub::{EdwardsConfig, EdwardsProjective};
 
 /// An error.
 pub type Error = frost_core::Error<BabyJubJubSha256>;
@@ -99,20 +98,20 @@ pub struct BabyJubJubGroup;
 impl Group for BabyJubJubGroup {
     type Field = BabyJubJubScalarField;
 
-    type Element = BabyJubJubElement;
+    type Element = EdwardsProjective;
 
     type Serialization = [u8; 32];
 
     fn cofactor() -> <Self::Field as Field>::Scalar {
-        Fr::from(8u64)
+        Fr::from(EdwardsConfig::COFACTOR[0])
     }
 
     fn identity() -> Self::Element {
-        BabyJubJubElement(EdwardsProjective::zero())
+        EdwardsProjective::zero()
     }
 
     fn generator() -> Self::Element {
-        BabyJubJubElement(EdwardsProjective::from(EdwardsConfig::GENERATOR))
+        EdwardsProjective::from(EdwardsConfig::GENERATOR)
     }
 
     fn serialize(element: &Self::Element) -> Self::Serialization {
@@ -120,7 +119,8 @@ impl Group for BabyJubJubGroup {
         let mut vec = Vec::new();
         let mut array = [0u8; 32];
 
-        let affine = element.0.into_affine();
+        // let affine = element.0.into_affine();
+        let affine = element.into_affine();
 
         affine
             .serialize_with_mode(&mut vec, Compress::Yes)
@@ -134,19 +134,20 @@ impl Group for BabyJubJubGroup {
             _ => panic!("Unexpected serialized length: {}", vec.len()),
         }
 
-        // println!("array: {:?}", array);
-
         array
     }
 
     fn deserialize(buf: &Self::Serialization) -> Result<Self::Element, GroupError> {
-        let point =
+        println!("here");
+        let point: EdwardsProjective =
             EdwardsProjective::deserialize_with_mode(&buf[..], Compress::Yes, Validate::Yes)
                 .map_err(|_| GroupError::MalformedElement)?;
+
+        println!("point: {:?}", point);
         if point.is_zero().into() {
             Err(GroupError::InvalidIdentityElement)
         } else {
-            Ok(BabyJubJubElement(point))
+            Ok(point)
         }
     }
 }

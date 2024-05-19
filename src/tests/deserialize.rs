@@ -1,4 +1,6 @@
-use crate::*;
+use ark_ff::MontFp;
+
+use crate::{babyjubjub::EdwardsAffine, *};
 
 // fail: called `Result::unwrap()` on an `Err` value: [2
 #[test]
@@ -8,6 +10,7 @@ fn check_deserialize_non_canonical() {
     );
 
     let r = <BabyJubJubSha256 as Ciphersuite>::Group::deserialize(&encoded_generator);
+
     assert!(r.is_ok());
 
     // The first byte should be 0x02 or 0x03. Set other value to
@@ -20,7 +23,7 @@ fn check_deserialize_non_canonical() {
     // Besides the first byte, it is still possible to get non-canonical encodings.
     // This is x = p + 2 which is non-canonical and maps to a valid prime-order point.
     let encoded_point =
-        hex::decode("ff861a672cfc76c26ae1c0db15117c2a767b27101fedac909e2058a7246caaaa")
+        hex::decode("ff0000fc647df850245c6e1e12fa0c4a175660a06d11146e0a684cb89c13190c")
             .unwrap()
             .try_into()
             .unwrap();
@@ -29,19 +32,21 @@ fn check_deserialize_non_canonical() {
 }
 
 #[test]
-fn encode() {
-    let mut encoded_generator = <BabyJubJubSha256 as Ciphersuite>::Group::serialize(
-        &<BabyJubJubSha256 as Ciphersuite>::Group::generator(),
-    );
-    encoded_generator[0] = 0xFF;
-}
-
-#[test]
 fn check_deserialize_identity() {
     // The identity is actually encoded as a single byte; but the API does not
     // allow us to change that. Try to send something similar.
-    let encoded_identity = [0u8; 32];
+    const x: Fq = MontFp!("0");
+    const y: Fq = MontFp!("1");
+    let id_zero = EdwardsAffine { x, y };
 
-    let r = <BabyJubJubSha256 as Ciphersuite>::Group::deserialize(&encoded_identity);
-    assert_eq!(r, Err(GroupError::MalformedElement));
+    let mut array = [0u8; 32];
+    let mut vec = Vec::new();
+    id_zero
+        .serialize_with_mode(&mut vec, Compress::Yes)
+        .expect("should succeed");
+
+    array.copy_from_slice(&vec);
+
+    let r = <BabyJubJubSha256 as Ciphersuite>::Group::deserialize(&array);
+    assert_eq!(r, Err(GroupError::InvalidIdentityElement));
 }
