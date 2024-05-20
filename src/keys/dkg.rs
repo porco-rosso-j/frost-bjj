@@ -11,11 +11,11 @@ pub mod round1 {
     /// # Security
     ///
     /// This package MUST NOT be sent to other participants!
-    pub type SecretPackage = frost::keys::dkg::round1::SecretPackage<S>;
+    pub type SecretPackage = frost::keys::dkg::round1::SecretPackage<B>;
 
     /// The package that must be broadcast by each participant to all other participants
     /// between the first and second parts of the DKG protocol (round 1).
-    pub type Package = frost::keys::dkg::round1::Package<S>;
+    pub type Package = frost::keys::dkg::round1::Package<B>;
 }
 
 /// DKG Round 2 structures.
@@ -28,7 +28,7 @@ pub mod round2 {
     /// # Security
     ///
     /// This package MUST NOT be sent to other participants!
-    pub type SecretPackage = frost::keys::dkg::round2::SecretPackage<S>;
+    pub type SecretPackage = frost::keys::dkg::round2::SecretPackage<B>;
 
     /// A package that must be sent by each participant to some other participants
     /// in Round 2 of the DKG protocol. Note that there is one specific package
@@ -37,7 +37,7 @@ pub mod round2 {
     /// # Security
     ///
     /// The package must be sent on an *confidential* and *authenticated* channel.
-    pub type Package = frost::keys::dkg::round2::Package<S>;
+    pub type Package = frost::keys::dkg::round2::Package<B>;
 }
 
 /// Performs the first part of the distributed key generation protocol

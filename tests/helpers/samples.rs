@@ -2,6 +2,8 @@
 
 use std::collections::{BTreeMap, HashMap};
 
+use ark_ed_on_bn254::Fr;
+use ark_ff::{MontFp, PrimeField};
 use frost_bjj::{
     keys::{
         dkg::{round1, round2},
@@ -10,9 +12,9 @@ use frost_bjj::{
     },
     round1::{NonceCommitment, SigningCommitments},
     round2::SignatureShare,
-    Field, Signature, SigningPackage, VerifyingKey,
+    Ciphersuite, Field, Group, Signature, SigningPackage, VerifyingKey,
 };
-use frost_core::{Ciphersuite, Element, Group, Scalar};
+use frost_core::{Element, Scalar};
 
 type C = frost_bjj::BabyJubJubSha256;
 
@@ -22,6 +24,12 @@ fn element1() -> Element<C> {
 
 fn element2() -> Element<C> {
     element1() + element1()
+}
+
+#[test]
+fn get_elements() {
+    println!("{:?}", element1());
+    println!("{:?}", element2());
 }
 
 fn scalar1() -> Scalar<C> {
@@ -44,7 +52,8 @@ pub fn signing_commitments() -> SigningCommitments {
 
 /// Generate a sample SigningPackage.
 pub fn signing_package() -> SigningPackage {
-    let identifier = 42u16.try_into().unwrap();
+    let identifier: frost_core::frost::Identifier<frost_bjj::BabyJubJubSha256> =
+        42u16.try_into().unwrap();
     let commitments = BTreeMap::from([(identifier, signing_commitments())]);
     let message = "hello world".as_bytes();
 

@@ -63,11 +63,11 @@ mod tests {
 
     use crate::BabyJubJubSha256;
 
-    // lazy_static! {
-    //     pub static ref REPAIR_SHARE: Value =
-    //         serde_json::from_str(include_str!("../../tests/helpers/repair-share.json").trim())
-    //             .unwrap();
-    // }
+    lazy_static! {
+        pub static ref REPAIR_SHARE: Value =
+            serde_json::from_str(include_str!("../../tests/helpers/repair-share.json").trim())
+                .unwrap();
+    }
 
     #[test]
     fn check_repair_share_step_1() {
@@ -78,16 +78,16 @@ mod tests {
 
     #[test]
     fn check_repair_share_step_2() {
-        // frost_core::tests::repairable::check_repair_share_step_2::<BabyJubJubSha256>(&REPAIR_SHARE);
+        frost_core::tests::repairable::check_repair_share_step_2::<BabyJubJubSha256>(&REPAIR_SHARE);
     }
 
     #[test]
     fn check_repair_share_step_3() {
         let rng = thread_rng();
-        // frost_core::tests::repairable::check_repair_share_step_3::<BabyJubJubSha256, _>(
-        //     rng,
-        //     &REPAIR_SHARE,
-        // );
+        frost_core::tests::repairable::check_repair_share_step_3::<BabyJubJubSha256, _>(
+            rng,
+            &REPAIR_SHARE,
+        );
     }
 
     #[test]

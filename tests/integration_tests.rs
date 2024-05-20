@@ -172,11 +172,13 @@ lazy_static! {
             .expect("Test vector is valid JSON");
 }
 
+// called `Result::unwrap()` on an `Err` value: "malformed verifying key encoding"
 #[test]
 fn check_sign_with_test_vectors() {
     frost_core::tests::vectors::check_sign_with_test_vectors::<BabyJubJubSha256>(&VECTORS);
 }
 
+// called `Result::unwrap()` on an `Err` value: "malformed verifying key encoding"
 #[test]
 fn check_sign_with_test_vectors_with_big_identifiers() {
     frost_core::tests::vectors::check_sign_with_test_vectors::<BabyJubJubSha256>(

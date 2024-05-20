@@ -12,14 +12,6 @@ pub struct EdwardsConfig;
 pub type EdwardsAffine = Affine<EdwardsConfig>;
 pub type EdwardsProjective = Projective<EdwardsConfig>;
 
-/// `Baby-JubJub` is a twisted Edwards curve. These curves have equations of the
-/// form: ax² + y² = 1 + dx²y².
-/// over some base finite field Fq.
-///
-/// Baby-JubJub's curve equation: x² + y² = 1 + (168696/168700)x²y²
-///
-/// q = 21888242871839275222246405745257275088548364400416034343698204186575808495617
-
 impl CurveConfig for EdwardsConfig {
     type BaseField = Fq;
     type ScalarField = Fr;
@@ -53,13 +45,6 @@ impl MontCurveConfig for EdwardsConfig {
     type TECurveConfig = EdwardsConfig;
 }
 
-// generator
-// pub const GENERATOR_X: Fq =
-//     MontFp!("995203441582195749578291179787384436505546430278305826713579947235728471134");
-// pub const GENERATOR_Y: Fq =
-//     MontFp!("5472060717959818805561601436314318772137091100104008585924551046643952123905");
-
-// base
 pub const GENERATOR_X: Fq =
     MontFp!("5299619240641551281634865583518297030282874472190772894086521144482721001553");
 pub const GENERATOR_Y: Fq =

@@ -1,8 +1,8 @@
+use ark_ed_on_bn254::Fq;
 use ark_ff::MontFp;
 
 use crate::{babyjubjub::EdwardsAffine, *};
 
-// fail: called `Result::unwrap()` on an `Err` value: [2
 #[test]
 fn check_deserialize_non_canonical() {
     let mut encoded_generator = <BabyJubJubSha256 as Ciphersuite>::Group::serialize(

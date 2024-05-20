@@ -18,7 +18,9 @@ use crate::Ciphersuite;
 pub fn check_zero_key_fails<C: Ciphersuite>() {
     let zero = <<<C as Ciphersuite>::Group as Group>::Field>::zero();
     let encoded_zero = <<<C as Ciphersuite>::Group as Group>::Field>::serialize(&zero);
+    println!("encoded_zero: {:?}", encoded_zero);
     let r = SigningKey::<C>::deserialize(encoded_zero);
+    println!("r: {:?}", r);
     assert_eq!(r, Err(Error::MalformedSigningKey));
 }
 

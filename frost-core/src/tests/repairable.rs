@@ -118,6 +118,12 @@ pub fn check_repair_share_step_1<C: Ciphersuite, R: RngCore + CryptoRng>(mut rng
     // Signer 2 will lose their share
     // Signers (helpers) 1, 4 and 5 will help signer 2 (participant) to recover their share
 
+    // println!("1: {:?}", &shares[&Identifier::try_from(1).unwrap()].value);
+    // println!("2: {:?}", &shares[&Identifier::try_from(2).unwrap()].value);
+    // println!("3: {:?}", &shares[&Identifier::try_from(3).unwrap()].value);
+    // println!("4: {:?}", &shares[&Identifier::try_from(4).unwrap()].value);
+    // println!("5: {:?}", &shares[&Identifier::try_from(5).unwrap()].value);
+
     let helper_1 = &shares[&Identifier::try_from(1).unwrap()];
     let helper_4 = &shares[&Identifier::try_from(4).unwrap()];
     let helper_5 = &shares[&Identifier::try_from(5).unwrap()];
@@ -164,6 +170,9 @@ pub fn check_repair_share_step_2<C: Ciphersuite>(repair_share_helpers: &Value) {
 
     let actual: <<<C as Ciphersuite>::Group as Group>::Field as Field>::Scalar =
         generate_scalar_from_byte_string::<C>(values["random_scalar_sum"].as_str().unwrap());
+
+    // println!("expected:  {:?}", expected);
+    // println!("actual:  {:?}", actual);
 
     assert!(actual == expected);
 }

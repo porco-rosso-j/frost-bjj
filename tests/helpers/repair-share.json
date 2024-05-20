@@ -1,15 +1,15 @@
 {
     "scalar_generation": {
-        "random_scalar_1": "1847f6c4a85096e5dbc9e200c9691c5164f8e276d32d4a54ebaf4275474a1403",
-        "random_scalar_2": "eac5595269d108812eaa865bf62c703a2c128a61fa3bd4dc837b9314bc515204",
-        "random_scalar_3": "5b3b6084e41c273a39a8d9bbbd87fbcd626c07030142bf78c6c91247bf175700",
-        "random_scalar_sum": "5e48b09bf63dc6a1441d42187d1d885a38c896f51f633e6e76218944f27c7bc6"
+        "random_scalar_1": "3d73b4b1626f99a677da1bcd4827dcdad1e7077e93be82dee5fbae5eb6730403",
+        "random_scalar_2": "532103c93ed1e59090e509c2bd198ddd95c9bfc7bf4e4d250331c6bb38593904",
+        "random_scalar_3": "0d118b3a7c5ee8593d8a16cdcd233055b8bd0f7cc77a157a974e8950c6c02505",
+        "random_scalar_sum": "6044BFC1BF1F08AF4459CCAD803BDEBC09B20D4D2EB86FFED8920CE82E6D92"
     },
     "sigma_generation": {
-        "sigma_1": "ec3aa83140065181d75b746bfd6bbbbaf212bdfbb3a91670f924d1ca899cbc0c",
-        "sigma_2": "5dd288d659e0a2dd3ef7523a9cc4f80f4a7f919e9980005c7fbec0961d3fb500",
-        "sigma_3": "3e62e7461db9ca1ed2f1549a8114bbc87fa9242ce0012ed3f9ac9dcf23f4c30a",
-        "sigma_4": "684c44e7aba416a1982a8db8ec2a3095f5cc6a3f958a4716b69ae76524dd7200",
-        "sigma_sum": "f0bc5d356344d51f816ea8fa076fa029f7590120136bec7c6958b9081f7864d5"
+        "sigma_1": "19280c3694fc2881346c73fa9024cf3b710d1bc4651b01ac47e982a0c13ef004",
+        "sigma_2": "bb8e111c18df8ad1af6710bb5845ff510a96cc37ceb99079cabe635ba0d3dd08",
+        "sigma_3": "e37d76cbcbc44c14ef38043bff3b2154467095f0a7c6922444a1f09e4d563f09",
+        "sigma_4": "898ea31783f13def4fb0cd9d97d24a18adb48050ed8c7b2af24d246f45b28e0c",
+        "sigma_sum": "661b4c7bc6cb19a676836648c3847cd06ec8fd3cc928a0744897fb09f51a9c03"
     }
 }

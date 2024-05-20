@@ -3,8 +3,8 @@
     "MAX_PARTICIPANTS": "3",
     "NUM_PARTICIPANTS": "2",
     "MIN_PARTICIPANTS": "2",
-    "name": "FROST(secp256k1, SHA-256)",
-    "group": "secp256k1",
+    "name": "FROST(babyjubjub, SHA-256)",
+    "group": "babyjubjub",
     "hash": "SHA-256"
   },
   "inputs": {

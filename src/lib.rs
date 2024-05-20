@@ -8,7 +8,7 @@
 use std::collections::HashMap;
 
 use ark_ec::{twisted_edwards::TECurveConfig, CurveConfig, CurveGroup};
-use ark_ed_on_bn254::{Fq, Fr};
+use ark_ed_on_bn254::Fr;
 use ark_ff::{
     field_hashers::DefaultFieldHasher, fields::field_hashers::HashToField, BigInteger,
     Field as ArkField, One, PrimeField, UniformRand, Zero,
@@ -19,7 +19,7 @@ use ark_std::vec::Vec;
 use rand_core::{CryptoRng, RngCore};
 use sha2::{Digest, Sha256};
 
-use frost_core::frost;
+use frost_core::{frost, Scalar};
 
 #[cfg(feature = "serde")]
 use frost_core::serde;
@@ -63,26 +63,20 @@ impl Field for BabyJubJubScalarField {
     }
 
     fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self::Scalar {
-        // TODO: maybe reduce to Fr
-        // Fq::from(Fr::rand(rng).into_bigint())
         Fr::rand(rng)
     }
 
     fn serialize(scalar: &Self::Scalar) -> Self::Serialization {
-        // Convert the representation to a byte vector in little-endian format
-        let bytes = scalar.0.to_bytes_le();
+        let bytes = scalar.into_bigint().to_bytes_le();
         let mut array = [0u8; 32];
         array[..bytes.len()].copy_from_slice(&bytes);
         array
     }
 
     fn deserialize(buf: &Self::Serialization) -> Result<Self::Scalar, FieldError> {
-        // let scalar = Fr::from_le_bytes_mod_order(buf);
-        let scalar = Fr::from_le_bytes_mod_order(buf);
-        if scalar.is_zero() {
-            Err(FieldError::InvalidZeroScalar)
-        } else {
-            Ok(scalar)
+        match Self::Scalar::from_le_bytes_mod_order(buf).into() {
+            Some(s) => Ok(s),
+            None => Err(FieldError::MalformedScalar),
         }
     }
 
@@ -138,12 +132,12 @@ impl Group for BabyJubJubGroup {
     }
 
     fn deserialize(buf: &Self::Serialization) -> Result<Self::Element, GroupError> {
-        println!("here");
+        // println!("here");
         let point: EdwardsProjective =
             EdwardsProjective::deserialize_with_mode(&buf[..], Compress::Yes, Validate::Yes)
                 .map_err(|_| GroupError::MalformedElement)?;
 
-        println!("point: {:?}", point);
+        // println!("point: {:?}", point);
         if point.is_zero().into() {
             Err(GroupError::InvalidIdentityElement)
         } else {
@@ -240,10 +234,10 @@ impl Ciphersuite for BabyJubJubSha256 {
     }
 }
 
-type S = BabyJubJubSha256;
+type B = BabyJubJubSha256;
 
 /// A FROST(babyjubjub, SHA-256) participant identifier.
-pub type Identifier = frost::Identifier<S>;
+pub type Identifier = frost::Identifier<B>;
 
 /// FROST(babyjubjub, SHA-256) keys, key generation, key shares.
 pub mod keys {
@@ -252,7 +246,7 @@ pub mod keys {
     use std::collections::HashMap;
 
     /// The identifier list to use when generating key shares.
-    pub type IdentifierList<'a> = frost::keys::IdentifierList<'a, S>;
+    pub type IdentifierList<'a> = frost::keys::IdentifierList<'a, B>;
 
     /// Allows all participants' keys to be generated using a central, trusted
     /// dealer.
@@ -303,13 +297,13 @@ pub mod keys {
     ///
     /// To derive a FROST(babyjubjub, SHA-256) keypair, the receiver of the [`SecretShare`] *must* call
     /// .into(), which under the hood also performs validation.
-    pub type SecretShare = frost::keys::SecretShare<S>;
+    pub type SecretShare = frost::keys::SecretShare<B>;
 
     /// A secret scalar value representing a signer's share of the group secret.
-    pub type SigningShare = frost::keys::SigningShare<S>;
+    pub type SigningShare = frost::keys::SigningShare<B>;
 
     /// A public group element that represents a single signer's public verification share.
-    pub type VerifyingShare = frost::keys::VerifyingShare<S>;
+    pub type VerifyingShare = frost::keys::VerifyingShare<B>;
 
     /// A FROST(babyjubjub, SHA-256) keypair, which can be generated either by a trusted dealer or using
     /// a DKG.
@@ -317,13 +311,13 @@ pub mod keys {
     /// When using a central dealer, [`SecretShare`]s are distributed to
     /// participants, who then perform verification, before deriving
     /// [`KeyPackage`]s, which they store to later use during signing.
-    pub type KeyPackage = frost::keys::KeyPackage<S>;
+    pub type KeyPackage = frost::keys::KeyPackage<B>;
 
     /// Public data that contains all the signers' public keys as well as the
     /// group public key.
     ///
     /// Used for verification purposes before publishing a signature.
-    pub type PublicKeyPackage = frost::keys::PublicKeyPackage<S>;
+    pub type PublicKeyPackage = frost::keys::PublicKeyPackage<B>;
 
     /// Contains the commitments to the coefficients for our secret polynomial _f_,
     /// used to generate participants' key shares.
@@ -337,7 +331,7 @@ pub mod keys {
     /// [`VerifiableSecretSharingCommitment`], either by performing pairwise comparison, or by using
     /// some agreed-upon public location for publication, where each participant can
     /// ensure that they received the correct (and same) value.
-    pub type VerifiableSecretSharingCommitment = frost::keys::VerifiableSecretSharingCommitment<S>;
+    pub type VerifiableSecretSharingCommitment = frost::keys::VerifiableSecretSharingCommitment<B>;
 
     pub mod dkg;
     pub mod repairable;
@@ -354,16 +348,16 @@ pub mod round1 {
     /// Note that [`SigningNonces`] must be used *only once* for a signing
     /// operation; re-using nonces will result in leakage of a signer's long-lived
     /// signing key.
-    pub type SigningNonces = frost::round1::SigningNonces<S>;
+    pub type SigningNonces = frost::round1::SigningNonces<B>;
 
     /// Published by each participant in the first round of the signing protocol.
     ///
     /// This step can be batched if desired by the implementation. Each
     /// SigningCommitment can be used for exactly *one* signature.
-    pub type SigningCommitments = frost::round1::SigningCommitments<S>;
+    pub type SigningCommitments = frost::round1::SigningCommitments<B>;
 
     /// A commitment to a signing nonce share.
-    pub type NonceCommitment = frost::round1::NonceCommitment<S>;
+    pub type NonceCommitment = frost::round1::NonceCommitment<B>;
 
     /// Performed once by each participant selected for the signing operation.
     ///
@@ -373,13 +367,13 @@ pub mod round1 {
     where
         RNG: CryptoRng + RngCore,
     {
-        frost::round1::commit::<S, RNG>(secret, rng)
+        frost::round1::commit::<B, RNG>(secret, rng)
     }
 }
 
 /// Generated by the coordinator of the signing operation and distributed to
 /// each signing party.
-pub type SigningPackage = frost::SigningPackage<S>;
+pub type SigningPackage = frost::SigningPackage<B>;
 
 /// FROST(babyjubjub, SHA-256) Round 2 functionality and types, for signature share generation.
 pub mod round2 {
@@ -387,7 +381,7 @@ pub mod round2 {
 
     /// A FROST(babyjubjub, SHA-256) participant's signature share, which the Coordinator will aggregate with all other signer's
     /// shares into the joint signature.
-    pub type SignatureShare = frost::round2::SignatureShare<S>;
+    pub type SignatureShare = frost::round2::SignatureShare<B>;
 
     /// Performed once by each participant selected for the signing operation.
     ///
@@ -407,7 +401,7 @@ pub mod round2 {
 }
 
 /// A Schnorr signature on FROST(babyjubjub, SHA-256).
-pub type Signature = frost_core::Signature<S>;
+pub type Signature = frost_core::Signature<B>;
 
 /// Verifies each FROST(babyjubjub, SHA-256) participant's signature share, and if all are valid,
 /// aggregates the shares into a signature to publish.
@@ -433,7 +427,28 @@ pub fn aggregate(
 }
 
 /// A signing key for a Schnorr signature on FROST(babyjubjub, SHA-256).
-pub type SigningKey = frost_core::SigningKey<S>;
+pub type SigningKey = frost_core::SigningKey<B>;
 
 /// A valid verifying key for Schnorr signatures on FROST(babyjubjub, SHA-256).
-pub type VerifyingKey = frost_core::VerifyingKey<S>;
+pub type VerifyingKey = frost_core::VerifyingKey<B>;
+
+#[test]
+fn scalar_one() {
+    // let scalar = Fr::from(BigInt([42, 0, 0, 0]));
+    // println!("scalar test: {:?}", &scalar);
+    // // let ret = BabyJubJubScalarField::serialize(&scalar);
+    // // println!("ret(): {:?}", ret);
+
+    // let mut array = [0u8; 32];
+    // array[0] = 42;
+
+    // let ser = Identifier::deserialize(&array).unwrap();
+    // println!("ser(): {:?}", ser);
+
+    // let v: Identifier = Identifier::try_from(42u16).unwrap();
+    // println!("v(): {:?}", v);
+
+    let identifier: Identifier = 42u16.try_into().unwrap();
+
+    println!("identifier(): {:?}", identifier);
+}
